@@ -19,7 +19,7 @@ app.get('/', function(req, res){
 io.on('connection', function(socket){
 	console.log('an user connected');
 	socket.on('choice', function(what){
-		console.log('chosen' +what)
+		console.log('chosen : ' +what)
 	});
 });
 
