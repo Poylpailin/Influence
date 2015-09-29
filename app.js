@@ -1,28 +1,71 @@
-var express = require('express'); // à utiliser/mélanger plus tard avec socket.io
-var app = express(); // express est comme une librairie, il faut l'instancier une fois
-
-// var app = require('express')();
-// Même chose que les 2 lignes au dessus
+var express = require('express');
+var app = express();
+var choices = require('./choices.json');
 
 var http = require('http').Server(app);
-var io = require('socket.io')(http); // useless at the moment
+var io = require('socket.io')(http);
 
-// Quand on est sur la racine, j'envoie le fichier index.html
 app.get('/', function(req, res){
-	// Je dois donner le chemin complet vers le fichier
-	// __dirname is like __FILE__ in php
-	// Double underscore est une superglobale
-	res.sendFile(__dirname + '/index.html');
+  res.sendFile(__dirname + '/index.html');
 });
 
-// à chaque fois qu'un user choisi quelque chose, la console va l'afficher. 
+//------
+
+var votes = null;
+
+// Réinitialise la variable start et doit afficher 
+var start = function (socket) {
+	// Tire dans choices.json
+	var rand = Math.floor(Math.random() * choices.length);
+	console.log(choices[rand]);
+
+	// Stocke les images dans choices
+  	votes =  choices[rand];
+
+  	// event_name -> votes // event-value --> choices[rand]
+	io.sockets.emit('votes', votes);
+  	votes.left.total = 0;
+  	votes.right.total = 0;
+};
+
+// Actualise toutes les 3 secondes 
+setInterval(function(){
+	start();
+}, 3000);
+// Pour que le message s'affiche immédiatement. Ne pas avoir à attendre 3sec
+start();
+
+
+//--------------------
+
 io.on('connection', function(socket){
-	console.log('an user connected');
-	socket.on('choice', function(what){
-		console.log('chosen : ' +what)
-	});
+  // send all data
+  socket.emit('votes', votes);
+
+  socket.on('choice', function(what){
+    //console.log('vote');
+    if (what === 'left') {
+      votes.left.total++;
+    } else {
+      votes.right.total++;
+    }
+    io.sockets.emit('total', votes);
+  });
+
+  socket.on('unchoice', function(what){
+  	//console.log('unvote')
+    if (what === 'left') {
+      votes.left.total--;
+    } else {
+      votes.right.total--;
+    }
+    io.sockets.emit('total', votes);
+  });
+
+
+
 });
 
 http.listen(3000, function(){
-	console.log('listening on *:3000')
+  console.log('listening on *:3000');
 });

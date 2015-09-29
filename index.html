@@ -1,49 +1,98 @@
-<!DOCTYPE HTMl>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-	<meta charset ="UTF-8">
-	<title>Document</title>
+  <meta charset="utf-8">
+  <title>Personnage</title>
 
 	<!-- Jquery -->
-	<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
-	<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+	<script src="//code.jquery.com/jquery-2.0.0.js"></script>
 
 	<!-- Materialize -->
   	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.1/css/materialize.min.css">
   	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.1/js/materialize.min.js"></script>
-</head> 
+
+  <style media="screen">
+    .choice {
+      float: left;
+      margin: 1em;
+    }
+    img {
+      cursor: pointer;
+    }
+  </style>
+</head>
 <body>
-	<p>Je suis bien sur la page index.html</p>
 
-	<!-- Détecte les connexions ?? -->
-	<script src="/socket.io/socket.io.js"></script>
+<div class="container">
+	<div class="row">
+		<div class="col s12">
 
-	<script>
-		var socket = io();
-	</script>
+			<h1>What is your favorite personnage ?</h1>
 
-	<div class="container">
-		<div class="row">
-			<div class="col s12">
+			<div class="col s6 center-align">
+		  		<div class="choice left">
+		      		<img height="200">
+					<div class="caption"></div>
+					<div class="total"></div>
+		  		</div>
+	  		</div>
 
-				<form>
-					<div class="input-field col s12">
-			          <input id="what" type="text" class="validate">
-			          <label for="what"></label>
-			        </div>
+	  		<div class="col s6 center-align">
+	  			<div class="choice right">
+				    <img height="200">
+				    <div class="caption"></div>
+				    <div class="total"></div>
+  				</div>
+	  		</div>
 
-			        <a id="btn_choice" class="waves-effect waves-light btn">Envoyer</a>
-		    	</form>
-
-			</div>
 		</div>
 	</div>
+</div>
 
-	<script>
-		$('#btn_choice').click(function(){
-			socket.emit('choice', $('#what').val());
-		});
-	</script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+	var socket = io();
+
+	$(function () {
 	
-});
+	// detect mouse overs
+	// Si on passe la souris dans choice (left ou right), cela emit choice'what'
+	$('.choice').on('mouseover', function () {
+	    var what = 'left';
+	    if($(this).hasClass('right')) {
+	      what = 'right';
+	    }
+	    console.log(what);
+	    socket.emit('choice', what);
+	  });
+	});
+
+	// update total
+	socket.on('total', function (votes) {
+	  $(".left .total").html(votes.left.total);
+	  $(".right .total").html(votes.right.total);
+	});
+
+	// update the whole vote
+	socket.on('votes', function (votes) {
+
+		console.log(votes);
+	  $(".left img").prop('src', votes.left.src);
+	  $(".left .caption").html(votes.left.name);
+	  $(".right img").prop('src', votes.right.src);
+	  $(".right .caption").html(votes.right.name);
+	});
+
+	//-------------------
+  	$('.choice').on('mouseout', function () {
+    	var what = 'left';
+	    if($(this).hasClass('right')) {
+	      what = 'right';
+	    }
+	    // tell the server
+	    socket.emit('unchoice', what);
+  	});
+</script>
+
 </body>
+</html>
